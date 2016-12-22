@@ -14,16 +14,16 @@ scp -i ~/.ssh/my_aws_key.pem ~/.ssh/my_aws_key.pem ec2-user@[public-ip-address]:
 ```sh
 ssh -i ~/.ssh/my_aws_key.pem ec2-user@[public-ip-address]
 ```
-- Clone the https://github.com/cloudera/director-scripts/ repository in the Director instance
+- Clone the https://github.com/TobyHFerguson/director-scripts/ repository in the Director instance
 ```sh
 sudo yum install git -y
-git clone https://github.com/cloudera/director-scripts/
+git clone https://github.com/TobyHFerguson/director-scripts/
 ```
 
 #### All following steps are to be executed in the Director instance
 - Install Director and other packages:
 ```sh
-cd transient-aws
+cd director-scripts/transient-aws
 ./install_director.sh
 ```
 
