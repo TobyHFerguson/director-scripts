@@ -307,7 +307,7 @@ if [[ "${SUBMIT_JOB}" == "true" ]]; then
     mkdir -p logs/${JOB_ID}
     ${SCP} ${REMOTE}:/tmp/${SSH_USERNAME}/hive.log ./logs/${JOB_ID}/hive.log
     # REPLACE_ME with S3 log location
-    aws s3 cp logs/${JOB_ID}/hive.log s3://bucket-name[REPLACE_ME]/etl_jobs/${JOB_ID}/hive.log
+    aws s3 cp logs/${JOB_ID}/hive.log s3://tobys-bucket/etl_jobs/${JOB_ID}/hive.log
 fi
 
 # Terminate only the cluster so that the next run will take
