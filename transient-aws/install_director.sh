@@ -64,12 +64,15 @@ sudo systemctl start mariadb
 ### Secure the instance, and add tables etc. for the 'director' user:
 cat - >/tmp/mdb.sql <<EOF
 create database director DEFAULT CHARACTER SET utf8;
-grant all on director.* TO 'director'@'%' IDENTIFIED BY 'password';
+grant all on director.* TO 'director'@'localhost' IDENTIFIED BY 'password';
 
 set password = password('password');
 grant all on *.* to 'root'@'%' identified by 'password' with grant option;
 EOF
-mysql -u root --password=password </tmp/mdb.sql
+mysql -u root </tmp/mdb.sql || {
+    echo '$0: ERROR - Failed to configure mariadb by executing /tmp/mdb.sql. Quitting' 1>&2
+    exit 2
+}
 
 ### Install the jdbc drivers
 cd /tmp
