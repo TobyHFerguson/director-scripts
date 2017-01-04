@@ -28,14 +28,14 @@ function message() {
 }
 
 
-INSTANCE_ID=$(aws ec2 run-instances --image-id ${DIRECTOR_OS_AMI:?} --count 1 --instance-type ${DIRECTOR_INSTANCE_TYPE:?} --key-name ${AWS_KEYNAME:?} --security-group-ids ${SECURITY_GROUP:?} --subnet-id ${SUBNET_ID:?} --disable-api-termination | grep INSTANCES | cut -f 8)
+INSTANCE_ID=$(aws ec2 run-instances --image-id ${DIRECTOR_OS_AMI:?} --count 1 --instance-type ${DIRECTOR_INSTANCE_TYPE:?} --key-name ${AWS_KEYNAME:?} --security-group-ids ${SECURITY_GROUP:?} --subnet-id ${SUBNET_ID:?} --disable-api-termination --output text | grep INSTANCES | cut -f 8)
 aws ec2 create-tags --resources ${INSTANCE_ID:?} --tags Key=owner,Value=${USER} Key=Name,Value=${INSTANCENAME:?}
 message "Instance ID: ${INSTANCE_ID:?} created, now booting"
 
 DIRECTOR_IP_ADDRESS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output text | grep ASSOCIATION | head -1 | cut -f3)
 DIRECTOR_PRIVATE_IP=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output text | grep PRIVATEIPADDRESSES | cut -f4)
-SUBNET_ID=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output=text | grep ^INSTANCES | cut -f20)
-SECURITY_GROUP_ID=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output=text | grep ^SECURITYGROUPS | cut -f2)
+SUBNET_ID=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output text | grep ^INSTANCES | cut -f20)
+SECURITY_GROUP_ID=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output text | grep ^SECURITYGROUPS | cut -f2)
 
 if !aws s3 ls s3://${BUCKET_NAME:?} 2>/dev/null 1>&2
 then
