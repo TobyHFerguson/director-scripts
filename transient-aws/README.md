@@ -15,10 +15,11 @@ Then configure your AWS credentials
 aws configure
 ```
 
-- pull down this repository to a directory near you and cd to the correct directory:
+- pull down this repository to a directory near you and cd to the correct directory and change to this branch:
 ```sh
 git clone https://github.com/TobyHFerguson/director-scripts
 cd director-scripts/transient-aws
+git checkout make_director_ami
 ```
 
 - edit the `create_director_image.sh` file to put in your values
