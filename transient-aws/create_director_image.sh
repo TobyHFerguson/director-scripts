@@ -112,4 +112,10 @@ scp  -F ${SSH_CONFIG_FILE:?} -r ~/.aws director:
 for file in ${STAGE_DIR:?}/* install_director.sh ; do scp  -F ${SSH_CONFIG_FILE:?} $file director:; done
 
 # Install director
-ssh -t -F ${SSH_CONFIG_FILE:?} director 'bash ./install_director.sh'
+log=/tmp/install_director.$$.log
+message "Installing director - check (or tail -f) the log file ${log:?} "
+ssh -qt-F ${SSH_CONFIG_FILE:?} director 'bash ./install_director.sh' > ${log:?}
+
+message "Created ssh config file in ${SSH_CONFIG_FILE:?}. 
+	Execute 'ssh -F ${SSH_CONFIG_FILE:?} director' to access the director instance
+	Execute 'ssh -tF ${SSH_CONFIG_FILE:?} director \"./run_all.sh\" to run the transient cluster etl job"

@@ -34,5 +34,5 @@ This will:
 
 ### Run transient job
 ```sh
-ssh -F CONFIG_FILE director "./run_all.sh"
+ssh -tF CONFIG_FILE director "./run_all.sh"
 ```
