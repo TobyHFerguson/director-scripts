@@ -1,7 +1,7 @@
 #!/bin/bash
 ### EDIT THESE TO MATCH YOUR ENVIRONMENT
-#### AWS_KEYFILE - absolute path to where you stored the AWS keyfile
-AWS_KEYFILE=$HOME/.ssh/toby-aws
+#### AWS_SSH_KEYFILE - absolute path to where you stored the AWS SSH keyfile
+AWS_SSH_KEYFILE=$HOME/.ssh/toby-aws
 #### AWS_KEYNAME - absolute path to the AWS name of the key
 AWS_KEYNAME=toby-aws
 #### INSTANCENAME - name that the director instance will be given
@@ -54,7 +54,7 @@ REGION=$(sed -n -e '/region/s/.*=[ ][ ]*\(.*\)/\1/p' ~/.aws/config)
 
 # anything could be in here
 SSH_PRIVATE_KEY=/tmp/pk.$$
-sed -e 's|\(-----BEGIN RSA PRIVATE KEY-----\)|    privateKey: """\1|' -e 's|\(-----END RSA PRIVATE KEY-----\)|\1"""|' ${AWS_KEYFILE:?} >${SSH_PRIVATE_KEY:?}
+sed -e 's|\(-----BEGIN RSA PRIVATE KEY-----\)|    privateKey: """\1|' -e 's|\(-----END RSA PRIVATE KEY-----\)|\1"""|' ${AWS_SSH_KEYFILE:?} >${SSH_PRIVATE_KEY:?}
 
 
 cat - >/tmp/commands.sed <<EOF
@@ -84,7 +84,7 @@ cat - >${SSH_CONFIG_FILE:?} <<EOF
 Host director
      Hostname ${DIRECTOR_IP_ADDRESS:?}
      User ${DIRECTOR_OS_USER:?}
-     IdentityFile ${AWS_KEYFILE:?}
+     IdentityFile ${AWS_SSH_KEYFILE:?}
      CheckHostIP no
      StrictHostKeyChecking no
 EOF
@@ -103,7 +103,7 @@ chmod a+x ${STAGE_DIR:?}/*.sh
 until ssh -q  -F ${SSH_CONFIG_FILE:?} director 'echo hi >/dev/null'; do message "Waiting for ssh access to instance id: ${INSTANCE_ID:?}"; sleep 10; done
 
 # copy over the keyfile
-scp -F ${SSH_CONFIG_FILE:?} ${AWS_KEYFILE:?} director:.ssh/id_rsa
+scp -F ${SSH_CONFIG_FILE:?} ${AWS_SSH_KEYFILE:?} director:.ssh/id_rsa
 
 # Copy over the aws directory for credentials etc.
 scp  -F ${SSH_CONFIG_FILE:?} -r ~/.aws director:
