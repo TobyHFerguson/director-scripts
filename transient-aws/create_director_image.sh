@@ -24,13 +24,15 @@ OWNER=$USER
 BUCKET_NAME="$USER-bucket"
 
 function message() {
-    echo $0: $1 1>&2
+    cat - <<EOF
+$0: $1 
+EOF
 }
 
 
 INSTANCE_ID=$(aws ec2 run-instances --image-id ${DIRECTOR_OS_AMI:?} --count 1 --instance-type ${DIRECTOR_INSTANCE_TYPE:?} --key-name ${AWS_KEYNAME:?} --security-group-ids ${SECURITY_GROUP:?} --subnet-id ${SUBNET_ID:?} --disable-api-termination --output text | grep INSTANCES | cut -f 8)
 aws ec2 create-tags --resources ${INSTANCE_ID:?} --tags Key=owner,Value=${USER} Key=Name,Value=${INSTANCENAME:?}
-message "Instance ID: ${INSTANCE_ID:?} created, now booting"
+message "Created instance named ${INSTANCENAME:?}, id: ${INSTANCE_ID:?} tagged with owner = ${USER}. Now booting"
 
 DIRECTOR_IP_ADDRESS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output text | grep ASSOCIATION | head -1 | cut -f3)
 DIRECTOR_PRIVATE_IP=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output text | grep PRIVATEIPADDRESSES | cut -f4)
@@ -79,7 +81,7 @@ STAGE_DIR=/tmp/create_director.$$
 mkdir /tmp/create_director.$$
 
 # Create an ssh config file
-SSH_CONFIG_FILE=./config.$$
+SSH_CONFIG_FILE=/tmp/config.$$
 cat - >${SSH_CONFIG_FILE:?} <<EOF
 Host director
      Hostname ${DIRECTOR_IP_ADDRESS:?}
@@ -88,8 +90,6 @@ Host director
      CheckHostIP no
      StrictHostKeyChecking no
 EOF
-
-message "Created ssh config file in ${SSH_CONFIG_FILE:?}. Execute \'ssh -F ${SSH_CONFIG_FILE:?} director\' to access the director instance"
 
 # Substitute for the variables into the staging files
 for file in hive-example/*
@@ -100,13 +100,15 @@ done
 chmod a+x ${STAGE_DIR:?}/*.sh
 
 # Wait until we have ssh access
+message "Waiting for ssh access to instance id: ${INSTANCE_ID:?}"
 until ssh -q  -F ${SSH_CONFIG_FILE:?} director 'echo hi >/dev/null'; do message "Waiting for ssh access to instance id: ${INSTANCE_ID:?}"; sleep 10; done
 
+message "Copying files to the director instance"
 # copy over the keyfile
-scp -F ${SSH_CONFIG_FILE:?} ${AWS_SSH_KEYFILE:?} director:.ssh/id_rsa
+scp -qF ${SSH_CONFIG_FILE:?} ${AWS_SSH_KEYFILE:?} director:.ssh/id_rsa
 
 # Copy over the aws directory for credentials etc.
-scp  -F ${SSH_CONFIG_FILE:?} -r ~/.aws director:
+scp  -qF ${SSH_CONFIG_FILE:?} -r ~/.aws director:
 
 # Copy over the necessary files for operation into the home directory.
 for file in ${STAGE_DIR:?}/* install_director.sh ; do scp  -F ${SSH_CONFIG_FILE:?} $file director:; done

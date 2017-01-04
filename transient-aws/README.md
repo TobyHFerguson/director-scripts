@@ -24,6 +24,10 @@ git checkout make_director_ami
 
 - edit the `create_director_image.sh` file to put in your values
 
+The `AWS_SSH_KEYFILE` is the full path (directory and file name) of the file in which you stored the AWS private key. It might be something like `$HOME/.ssh/my-aws-key.pem` (or it could be `${HOME}/.ssh/AWS-key`)
+
+The `AWS_KEYNAME` is the _name_ of the key from Amazon's perspective. This typically is the key file name, without the `.pem` extenstion. (i.e if the `AWS_KEYNAME` is `my-aws-key` you'd typically have stored that in `$HOME/.ssh/my-aws-key.pem`) but you might've stored it in `${HOME}/.ssh/AWS-key` which is why both need to be set!)
+
 - run the `create_director_image.sh` file
 
 This will:
