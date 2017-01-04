@@ -40,7 +40,7 @@ DIRECTOR_USER=admin
 DIRECTOR_PASSWORD=admin
 
 #REPLACE_ME
-SSH_USERNAME="centos"
+SSH_USERNAME="REPLACE_ME_CLUSTER_OS_USER"
 SSH_PRIVATE_KEY="~/.ssh/id_rsa"
 
 #
@@ -307,7 +307,7 @@ if [[ "${SUBMIT_JOB}" == "true" ]]; then
     mkdir -p logs/${JOB_ID}
     ${SCP} ${REMOTE}:/tmp/${SSH_USERNAME}/hive.log ./logs/${JOB_ID}/hive.log
     # REPLACE_ME with S3 log location
-    aws s3 cp logs/${JOB_ID}/hive.log s3://bucket-name[REPLACE_ME]/etl_jobs/${JOB_ID}/hive.log
+    aws s3 cp logs/${JOB_ID}/hive.log s3://REPLACE_ME_BUCKET_NAME/etl_jobs/${JOB_ID}/hive.log
 fi
 
 # Terminate only the cluster so that the next run will take

@@ -238,7 +238,7 @@ create external table customer_address
 stored as parquet
 location 's3a://cloudera-cloud-demo/datasets/tpcds/nonpartitioned/parq/scale_1/customer_address';
 
-INSERT OVERWRITE DIRECTORY 's3a://[REPLACE_ME]/output/'
+INSERT OVERWRITE DIRECTORY 's3a://REPLACE_ME_BUCKET_NAME/output/'
 select  dt.d_year 
        ,item.i_brand_id brand_id 
        ,item.i_brand brand
