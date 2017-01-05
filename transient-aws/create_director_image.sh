@@ -37,7 +37,7 @@ EOF
 }
 
 function make-bucket-name() {
-    echo cloud-cat-lab-$USER-bucket-$(random)
+    echo cloud-lab-$USER-bucket-$(random)
 }
 
 function create-uniq-bucket() {
