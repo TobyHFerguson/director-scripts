@@ -21,12 +21,33 @@ CLUSTER_OS_USER=centos
 
 OWNER=$USER
 
-BUCKET_NAME="$USER-bucket"
+
+function random() {
+    SEED="$(date) $RANDOM"
+    case $(uname -s) in
+	"Darwin") echo $SEED | md5;;
+	"Linux") echo $SEED | md5sum | cut -d' ' -f1
+    esac
+}
 
 function message() {
     cat - <<EOF
 $0: $1 
 EOF
+}
+
+function make-bucket-name() {
+    echo cloud-cat-lab-$USER-bucket-$(random)
+}
+
+function create-uniq-bucket() {
+    bn=$(make-bucket-name)
+    while aws s3 ls s3://$bn 2>/dev/null 1>&2
+    do
+	bn=$(make-bucket-name)
+    done
+    aws s3 mb s3://$bn 2>/dev/null 1>&2
+    echo $bn
 }
 
 
@@ -39,11 +60,8 @@ DIRECTOR_PRIVATE_IP=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?}
 SUBNET_ID=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output text | grep ^INSTANCES | cut -f20)
 SECURITY_GROUP_ID=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output text | grep ^SECURITYGROUPS | cut -f2)
 
-if !aws s3 ls s3://${BUCKET_NAME:?} 2>/dev/null 1>&2
-then
-    message "Creating bucket s3://${BUCKET_NAME:?}"
-    aws s3 mb s3://${BUCKET_NAME:?}
-fi
+BUCKET_NAME=$(create-uniq-bucket)
+message "Results of ETL job will be in bucket s3://${BUCKET_NAME:?}/"
 
 # Definition of what's in the keys here:  https://alestic.com/2009/11/ec2-credentials/
 # alphanumeric
