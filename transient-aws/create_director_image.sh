@@ -53,7 +53,15 @@ function create-uniq-bucket() {
 
 INSTANCE_ID=$(aws ec2 run-instances --image-id ${DIRECTOR_OS_AMI:?} --count 1 --instance-type ${DIRECTOR_INSTANCE_TYPE:?} --key-name ${AWS_KEYNAME:?} --security-group-ids ${SECURITY_GROUP:?} --subnet-id ${SUBNET_ID:?} --disable-api-termination --output text | grep INSTANCES | cut -f 8)
 aws ec2 create-tags --resources ${INSTANCE_ID:?} --tags Key=owner,Value=${USER} Key=Name,Value=${INSTANCENAME:?}
-message "Created instance named ${INSTANCENAME:?}, id: ${INSTANCE_ID:?} tagged with owner = ${USER}. Now booting"
+message "Created instance named ${INSTANCENAME:?}, id: ${INSTANCE_ID:?} tagged with owner = ${USER}. 
+	Waiting up to 40 seconds for instance to become available"
+
+aws ec2 wait instance-running --instance-ids ${INSTANCE_ID:?} || {
+    echo "The instance ${INSTANCE_ID:?} is not running after 40 seconds. Aborting" 1>&2
+    exit 2
+    }
+
+message "Instance ${INSTANCE_ID:?} available - proceeding"
 
 DIRECTOR_IP_ADDRESS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output text | grep ASSOCIATION | head -1 | cut -f3)
 DIRECTOR_PRIVATE_IP=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output text | grep PRIVATEIPADDRESSES | cut -f4)
@@ -133,9 +141,17 @@ for file in ${STAGE_DIR:?}/* install_director.sh ; do scp  -F ${SSH_CONFIG_FILE:
 
 # Install director
 log=/tmp/install_director.$$.log
-message "Installing director - check (or tail -f) the log file ${log:?} "
-ssh -qt-F ${SSH_CONFIG_FILE:?} director 'bash ./install_director.sh' > ${log:?}
+message "Installing director - Logging to ${log:?} "
+ssh -qtF ${SSH_CONFIG_FILE:?} director 'bash ./install_director.sh' > ${log:?}
 
 message "Created ssh config file in ${SSH_CONFIG_FILE:?}. 
-	Execute 'ssh -F ${SSH_CONFIG_FILE:?} director' to access the director instance
-	Execute 'ssh -tF ${SSH_CONFIG_FILE:?} director \"./run_all.sh\" to run the transient cluster etl job"
+Execute 
+	ssh -qtF ${SSH_CONFIG_FILE:?} director 'cloudera-director bootstrap-remote analytic_cluster.conf --lp.remote.username=admin --lp.remote.password=admin' 
+to create the analytic (permanent) cluster
+
+When that is complete access HUE at http://${DIRECTOR_IP_ADDRESS:?}:8888, and enter the following command to make the output table:
+	CREATE EXTERNAL TABLE etl_table (d_year string,brand_id int,brand string,sum_agg float)  LOCATION 's3a://${BUCKET_NAME:?}/output'
+
+Execute 
+	ssh -qtF ${SSH_CONFIG_FILE:?} director './run_all.sh\' 
+to run the transient cluster etl job"
