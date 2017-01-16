@@ -1,4 +1,12 @@
 #!/bin/bash
+# $1 - AWS_ACCESS_KEY_ID
+# $2 - AWS_SECRET_ACCESS_KEY
+export AWS_ACCESS_KEY_ID=${1:?}
+export AWS_SECRET_ACCESS_KEY=${2:?}
+
+
+export AWS_DEFAULT_REGION=us-east-1
+
 ### EDIT THESE TO MATCH YOUR ENVIRONMENT
 #### AWS_SSH_KEYFILE - absolute path to where you stored the AWS SSH keyfile
 AWS_SSH_KEYFILE=$HOME/.ssh/toby-aws
@@ -20,7 +28,6 @@ CLUSTER_CDH_AMI=ami-49e9fe5e
 CLUSTER_OS_USER=centos
 
 OWNER=$USER
-
 
 function random() {
     SEED="$(date) $RANDOM"
@@ -51,6 +58,7 @@ function create-uniq-bucket() {
 }
 
 
+
 INSTANCE_ID=$(aws ec2 run-instances --image-id ${DIRECTOR_OS_AMI:?} --count 1 --instance-type ${DIRECTOR_INSTANCE_TYPE:?} --key-name ${AWS_KEYNAME:?} --security-group-ids ${SECURITY_GROUP:?} --subnet-id ${SUBNET_ID:?} --disable-api-termination --output text | grep INSTANCES | cut -f 8)
 aws ec2 create-tags --resources ${INSTANCE_ID:?} --tags Key=owner,Value=${USER} Key=Name,Value=${INSTANCENAME:?}
 message "Created instance named ${INSTANCENAME:?}, id: ${INSTANCE_ID:?} tagged with owner = ${USER}. 
@@ -71,14 +79,6 @@ SECURITY_GROUP_ID=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} -
 BUCKET_NAME=$(create-uniq-bucket)
 message "Results of ETL job will be in bucket s3://${BUCKET_NAME:?}/"
 
-# Definition of what's in the keys here:  https://alestic.com/2009/11/ec2-credentials/
-# alphanumeric
-AWS_ACCESS_KEY_ID=$(sed -n -e '/aws_access_key_id/s/.*=[ ][ ]*\(.*\)/\1/p' ~/.aws/credentials)
-# alphanumeric and + and /
-AWS_SECRET_ACCESS_KEY=$(sed -n -e '/aws_secret_access_key/s/.*=[ ][ ]*\(.*\)/\1/p' ~/.aws/credentials)
-# alphanumeric and -
-REGION=$(sed -n -e '/region/s/.*=[ ][ ]*\(.*\)/\1/p' ~/.aws/config)
-
 
 # anything could be in here
 SSH_PRIVATE_KEY=/tmp/pk.$$
@@ -93,7 +93,7 @@ s|REPLACE_ME_CLUSTER_CDH_AMI|${CLUSTER_CDH_AMI:?}|g
 s|REPLACE_ME_CLUSTER_OS_USER|${CLUSTER_OS_USER:?}|g
 s|REPLACE_ME_DIRECTOR_PRIVATE_IP|${DIRECTOR_PRIVATE_IP:?}|g
 s|REPLACE_ME_OWNER|${OWNER:?}|g
-s|REPLACE_ME_REGION|${REGION:?}|g
+s|REPLACE_ME_REGION|${AWS_DEFAULT_REGION:?}|g
 s|REPLACE_ME_SECURITY_GROUP_ID|${SECURITY_GROUP_ID:?}|g
 /REPLACE_ME_SSH_PRIVATE_KEY/{
 r ${SSH_PRIVATE_KEY:?}
