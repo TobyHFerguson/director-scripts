@@ -3,31 +3,24 @@
 # $2 - AWS_SECRET_ACCESS_KEY
 export AWS_ACCESS_KEY_ID=${1:?}
 export AWS_SECRET_ACCESS_KEY=${2:?}
-
+OWNER=${3:?}
 
 export AWS_DEFAULT_REGION=us-east-1
 
-### EDIT THESE TO MATCH YOUR ENVIRONMENT
-#### AWS_SSH_KEYFILE - absolute path to where you stored the AWS SSH keyfile
-AWS_SSH_KEYFILE=$HOME/.ssh/toby-aws
-#### AWS_KEYNAME - absolute path to the AWS name of the key
-AWS_KEYNAME=toby-aws
-#### INSTANCENAME - name that the director instance will be given
-INSTANCENAME=tobys-director
-### END OF EDITS
-
-
 # CONSTANTS
-DIRECTOR_OS_AMI=ami-0ca23e1b
-DIRECTOR_OS_USER=ec2-user
-DIRECTOR_INSTANCE_TYPE=c4.xlarge
-SECURITY_GROUP=sg-891a50f1
-SUBNET_ID=subnet-e7542291
+CLUSTER_CDH_AMI=ami-49e9fe5e	# AMI for pre-created CDH image
+CLUSTER_OS_USER=centos		# User to ssh to CDH image
+DIRECTOR_OS_AMI=ami-0ca23e1b	# AMI to use for Director
+DIRECTOR_OS_USER=ec2-user	# User to ssh to Director
+DIRECTOR_INSTANCE_TYPE=c4.xlarge # Director instance type
+INSTANCENAME=cloudera-director	 # Name for Director instance
+SECURITY_GROUP=sg-891a50f1	 # Security group controlling the cluster
+SUBNET_ID=subnet-e7542291	 # Subnet within which the cluster will run
 
-CLUSTER_CDH_AMI=ami-49e9fe5e
-CLUSTER_OS_USER=centos
-
-OWNER=$USER
+# Create a directory to put the ssh information in
+SSH_DIR=/tmp/cloud-lab-${OWNER:?}
+rm -rf ${SSH_DIR:?}
+mkdir -p ${SSH_DIR:?}
 
 function random() {
     SEED="$(date) $RANDOM"
@@ -44,7 +37,11 @@ EOF
 }
 
 function make-bucket-name() {
-    echo cloud-lab-$USER-bucket-$(random)
+    echo cloud-lab-${OWNER:?}-bucket-$(random)
+}
+
+function make-key-name() {
+    echo cloud-lab-${OWNER:?}-keypair-$(random)
 }
 
 function create-uniq-bucket() {
@@ -58,10 +55,21 @@ function create-uniq-bucket() {
 }
 
 
+# # construct a brand new key pair and put the private key into a file
+AWS_KEYNAME=$(make-key-name)
+AWS_SSH_KEYFILE=${SSH_DIR:?}/${AWS_KEYNAME:?}
+touch ${AWS_SSH_KEYFILE:?}
+chmod 500 ${AWS_SSH_KEYFILE:?}
+aws ec2 create-key-pair --output text --key-name ${AWS_KEYNAME:?} --query 'KeyMaterial' >${AWS_SSH_KEYFILE:?} || {
+    err "Failed to create a keypair. Cleaning up and exiting"
+    aws ec2 delete-key-pair --key-name ${AWS_KEYNAME:?}
+    rm -f ${AWS_KEYNAME:?}
+    exit 2
+    }
 
 INSTANCE_ID=$(aws ec2 run-instances --image-id ${DIRECTOR_OS_AMI:?} --count 1 --instance-type ${DIRECTOR_INSTANCE_TYPE:?} --key-name ${AWS_KEYNAME:?} --security-group-ids ${SECURITY_GROUP:?} --subnet-id ${SUBNET_ID:?} --disable-api-termination --output text | grep INSTANCES | cut -f 8)
-aws ec2 create-tags --resources ${INSTANCE_ID:?} --tags Key=owner,Value=${USER} Key=Name,Value=${INSTANCENAME:?}
-message "Created instance named ${INSTANCENAME:?}, id: ${INSTANCE_ID:?} tagged with owner = ${USER}. 
+aws ec2 create-tags --resources ${INSTANCE_ID:?} --tags Key=owner,Value=${OWNER:?} Key=Name,Value=${INSTANCENAME:?}
+message "Created instance named ${INSTANCENAME:?}, id: ${INSTANCE_ID:?} tagged with owner = ${OWNER:?}. 
 	Waiting up to 40 seconds for instance to become available"
 
 aws ec2 wait instance-running --instance-ids ${INSTANCE_ID:?} || {
@@ -77,7 +85,7 @@ SUBNET_ID=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output 
 SECURITY_GROUP_ID=$(aws ec2 describe-instances --instance-ids ${INSTANCE_ID:?} --output text | grep ^SECURITYGROUPS | cut -f2)
 
 BUCKET_NAME=$(create-uniq-bucket)
-message "Results of ETL job will be in bucket s3://${BUCKET_NAME:?}/"
+message "created bucket s3://${BUCKET_NAME:?}/"
 
 
 # anything could be in here
@@ -106,8 +114,8 @@ EOF
 STAGE_DIR=/tmp/create_director.$$
 mkdir /tmp/create_director.$$
 
-# Create an ssh config file
-SSH_CONFIG_FILE=/tmp/config.$$
+
+SSH_CONFIG_FILE=${SSH_DIR:?}/ssh_config
 cat - >${SSH_CONFIG_FILE:?} <<EOF
 Host director
      Hostname ${DIRECTOR_IP_ADDRESS:?}
@@ -133,10 +141,13 @@ message "Copying files to the director instance"
 # copy over the keyfile
 scp -qF ${SSH_CONFIG_FILE:?} ${AWS_SSH_KEYFILE:?} director:.ssh/id_rsa
 
-# Copy over the aws directory for credentials etc.
-scp  -qF ${SSH_CONFIG_FILE:?} -r ~/.aws director:
+# Make the aws directory on the director
+ssh -qtF ${SSH_CONFIG_FILE:?} director 'mkdir -p ~/.aws'
 
-# Copy over the necessary files for operation into the home directory.
+# Copy the expanded credential and config file over and then delete them from the staging directory
+for file in ${STAGE_DIR:?}/{config,credentials}; do scp -F ${SSH_CONFIG_FILE} $file director:.aws/; rm -f $file; done
+
+# Copy over the remaining files from the staging directory into the director's home directory.
 for file in ${STAGE_DIR:?}/* install_director.sh ; do scp  -F ${SSH_CONFIG_FILE:?} $file director:; done
 
 # Install director
@@ -144,14 +155,44 @@ log=/tmp/install_director.$$.log
 message "Installing director - Logging to ${log:?} "
 ssh -qtF ${SSH_CONFIG_FILE:?} director 'bash ./install_director.sh' > ${log:?}
 
-message "Created ssh config file in ${SSH_CONFIG_FILE:?}. 
-Execute 
-	ssh -qtF ${SSH_CONFIG_FILE:?} director 'cloudera-director bootstrap-remote analytic_cluster.conf --lp.remote.username=admin --lp.remote.password=admin' 
-to create the analytic (permanent) cluster
+# Publish the text file
 
-When that is complete access HUE at http://${DIRECTOR_IP_ADDRESS:?}:8888, and enter the following command to make the output table:
-	CREATE EXTERNAL TABLE etl_table (d_year string,brand_id int,brand string,sum_agg float)  LOCATION 's3a://${BUCKET_NAME:?}/output'
+cat - ${SSH_DIR:?}/README <<EOF
+ssh
+   ssh configuration to access your director instance is in ssh_config
+   The private keyfile for your director instance is in ${AWS_KEYNAME:?}
 
-Execute 
-	ssh -qtF ${SSH_CONFIG_FILE:?} director './run_all.sh\' 
-to run the transient cluster etl job"
+Creating an Analytic Cluster
+   Create an analytic cluster by executing the following (in this directory):
+
+   ssh -qtF ssh_config director 'cloudera-director bootstrap-remote analytic_cluster.conf --lp.remote.username=admin --lp.remote.password=admin'
+
+Making the output table
+   Create an output table by accessing HUE at http://${DIRECTOR_IP_ADDRESS:?}:8888, and enter the following command to make the output table:
+   CREATE EXTERNAL TABLE etl_table (d_year string,brand_id int,brand string,sum_agg float)  LOCATION 's3a://${BUCKET_NAME:?}/output'
+
+Executing the ETL Job
+   Execute the ETL job to fill the output table by executing the following
+   
+   ssh -qtF ${SSH_CONFIG_FILE:?} director './run_all.sh\' 
+
+EOF
+
+# Edit the IdentityFile location to make it local to the ${SSH_DIR:?}
+sed -i s@${SSH_DIR:?}@@ ${SSH_CONFIG_FILE:?}
+ZIPFILE=/tmp/${OWNER:?}.zip
+zip ${ZIPFILE:?} ${SSH_DIR:?}/*
+
+message "Created zip file ${ZIPFILE:?} containing instructions for ${OWNER:?}"
+
+# message "Created ssh config file in ${SSH_CONFIG_FILE:?}. 
+# Execute 
+# 	ssh -qtF ${SSH_CONFIG_FILE:?} director 'cloudera-director bootstrap-remote analytic_cluster.conf --lp.remote.username=admin --lp.remote.password=admin' 
+# to create the analytic (permanent) cluster
+
+# When that is complete access HUE at http://${DIRECTOR_IP_ADDRESS:?}:8888, and enter the following command to make the output table:
+# 	CREATE EXTERNAL TABLE etl_table (d_year string,brand_id int,brand string,sum_agg float)  LOCATION 's3a://${BUCKET_NAME:?}/output'
+
+# Execute 
+# 	ssh -qtF ${SSH_CONFIG_FILE:?} director './run_all.sh\' 
+# to run the transient cluster etl job"
