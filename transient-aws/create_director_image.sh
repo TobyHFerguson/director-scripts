@@ -13,7 +13,7 @@ CLUSTER_OS_USER=centos		# User to ssh to CDH image
 DIRECTOR_OS_AMI=ami-0ca23e1b	# AMI to use for Director
 DIRECTOR_OS_USER=ec2-user	# User to ssh to Director
 DIRECTOR_INSTANCE_TYPE=c4.xlarge # Director instance type
-INSTANCENAME=cloudera-director	 # Name for Director instance
+INSTANCENAME=${OWNER:?}-director	 # Name for Director instance
 SECURITY_GROUP=sg-891a50f1	 # Security group controlling the cluster
 SUBNET_ID=subnet-e7542291	 # Subnet within which the cluster will run
 
@@ -59,7 +59,7 @@ function create-uniq-bucket() {
 AWS_KEYNAME=$(make-key-name)
 AWS_SSH_KEYFILE=${SSH_DIR:?}/${AWS_KEYNAME:?}
 touch ${AWS_SSH_KEYFILE:?}
-chmod 500 ${AWS_SSH_KEYFILE:?}
+chmod 600 ${AWS_SSH_KEYFILE:?}
 aws ec2 create-key-pair --output text --key-name ${AWS_KEYNAME:?} --query 'KeyMaterial' >${AWS_SSH_KEYFILE:?} || {
     err "Failed to create a keypair. Cleaning up and exiting"
     aws ec2 delete-key-pair --key-name ${AWS_KEYNAME:?}
@@ -157,7 +157,7 @@ ssh -qtF ${SSH_CONFIG_FILE:?} director 'bash ./install_director.sh' > ${log:?}
 
 # Publish the text file
 
-cat - ${SSH_DIR:?}/README <<EOF
+cat - >${SSH_DIR:?}/README <<EOF
 ssh
    ssh configuration to access your director instance is in ssh_config
    The private keyfile for your director instance is in ${AWS_KEYNAME:?}
@@ -179,7 +179,7 @@ Executing the ETL Job
 EOF
 
 # Edit the IdentityFile location to make it local to the ${SSH_DIR:?}
-sed -i s@${SSH_DIR:?}@@ ${SSH_CONFIG_FILE:?}
+sed -i '' s@${SSH_DIR:?}@@ ${SSH_CONFIG_FILE:?}
 ZIPFILE=/tmp/${OWNER:?}.zip
 zip ${ZIPFILE:?} ${SSH_DIR:?}/*
 
