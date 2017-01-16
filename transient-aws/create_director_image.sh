@@ -179,9 +179,9 @@ Executing the ETL Job
 EOF
 
 # Edit the IdentityFile location to make it local to the ${SSH_DIR:?}
-sed -i '' s@${SSH_DIR:?}@@ ${SSH_CONFIG_FILE:?}
+sed -i '' s@${SSH_DIR:?}/@@ ${SSH_CONFIG_FILE:?}
 ZIPFILE=/tmp/${OWNER:?}.zip
-zip ${ZIPFILE:?} ${SSH_DIR:?}/*
+zip -j ${ZIPFILE:?} ${SSH_DIR:?}/*
 
 message "Created zip file ${ZIPFILE:?} containing instructions for ${OWNER:?}"
 
