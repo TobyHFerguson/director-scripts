@@ -10,7 +10,8 @@ export AWS_DEFAULT_REGION=us-east-1
 # CONSTANTS
 CLUSTER_CDH_AMI=ami-49e9fe5e	# AMI for pre-created CDH image
 CLUSTER_OS_USER=centos		# User to ssh to CDH image
-DIRECTOR_OS_AMI=ami-0ca23e1b	# AMI to use for Director
+DIRECTOR_OS_AMI=ami-0ca23e1b	# AMI to use for Director - RHEL 73
+DIRECTOR_OS_AMI=ami-5ca14f4a # prebuilt ami
 DIRECTOR_OS_USER=ec2-user	# User to ssh to Director
 DIRECTOR_INSTANCE_TYPE=c4.xlarge # Director instance type
 INSTANCENAME=${OWNER:?}-director	 # Name for Director instance
@@ -149,11 +150,6 @@ for file in ${STAGE_DIR:?}/{config,credentials}; do scp -F ${SSH_CONFIG_FILE} $f
 
 # Copy over the remaining files from the staging directory into the director's home directory.
 for file in ${STAGE_DIR:?}/* install_director.sh ; do scp  -F ${SSH_CONFIG_FILE:?} $file director:; done
-
-# Install director
-log=/tmp/install_director.$$.log
-message "Installing director - Logging to ${log:?} "
-ssh -qtF ${SSH_CONFIG_FILE:?} director 'bash ./install_director.sh' > ${log:?}
 
 # Publish the text file
 
