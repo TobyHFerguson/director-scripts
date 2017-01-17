@@ -3,9 +3,17 @@
 # $2 - AWS_SECRET_ACCESS_KEY
 # $3 - Owner - optional; defaults to user running script
 # $4 - base directory for cloud lab - optional
+
+[ 2 -le $# && $# -le 4 ] || {
+    cat - 1>&2 <<EOF
+$0: ERROR: Expected between 2 and 4 arguments, got $#
+Usage: $0 AWS_ACCESS_KEY_ID AWS_SECRET_KEY_ID [Owner - defaults to value of USER env] [base_dir - default to /tmp/cloud_lab]
+EOF
+}
+
 export AWS_ACCESS_KEY_ID=${1:?}
 export AWS_SECRET_ACCESS_KEY=${2:?}
-OWNER=${3:?}
+OWNER=${3:-${USER:?}}
 CLOUD_LAB_DIR=${4:-/tmp/cloud_lab}
 
 
@@ -160,7 +168,7 @@ Making the output table
 Executing the ETL Job
    Execute the ETL job to fill the output table by executing the following
    
-   ssh -qtF ${SSH_CONFIG_FILE:?} director './run_all.sh\' 
+   ssh -qtF ssh_config director './run_all.sh' 
 
 EOF
 
