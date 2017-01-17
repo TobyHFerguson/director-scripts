@@ -4,11 +4,12 @@
 # $3 - Owner - optional; defaults to user running script
 # $4 - base directory for cloud lab - optional
 
-[ 2 -le $# && $# -le 4 ] || {
+[[ 2 -le $# && $# -le 4 ]] || {
     cat - 1>&2 <<EOF
 $0: ERROR: Expected between 2 and 4 arguments, got $#
-Usage: $0 AWS_ACCESS_KEY_ID AWS_SECRET_KEY_ID [Owner - defaults to value of USER env] [base_dir - default to /tmp/cloud_lab]
+Usage: $0 AWS_ACCESS_KEY_ID AWS_SECRET_KEY_ID [Owner - defaults to value of USER env] [base_dir - defaults to /tmp/cloud_lab]
 EOF
+    exit 2
 }
 
 export AWS_ACCESS_KEY_ID=${1:?}
