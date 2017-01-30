@@ -22,9 +22,10 @@ export AWS_DEFAULT_REGION=us-east-1
 
 # CONSTANTS
 
-CLUSTER_CDH_AMI=ami-49e9fe5e	# AMI for pre-created CDH image
+#CLUSTER_CDH_AMI=ami-49e9fe5e	# AMI for pre-created CDH image
+CLUSTER_CDH_AMI=ami-05a75613	# AMI for pre-created CDH image
 CLUSTER_OS_USER=centos		# User to ssh to CDH image
-DIRECTOR_OS_AMI=ami-0ca23e1b	# AMI to use for Director - RHEL 73
+#DIRECTOR_OS_AMI=ami-0ca23e1b	# AMI to use for Director - RHEL 73
 DIRECTOR_OS_AMI=ami-f9bb55ef    # prebuilt ami
 DIRECTOR_OS_USER=ec2-user	# User to ssh to Director
 DIRECTOR_INSTANCE_TYPE=c4.xlarge # Director instance type
@@ -95,7 +96,9 @@ aws ec2 create-key-pair --output text --key-name ${AWS_KEYNAME:?} --query 'KeyMa
 
 # Get the various resources from the cloud provider
 INSTANCE_ID=$(aws ec2 run-instances --image-id ${DIRECTOR_OS_AMI:?} --count 1 --instance-type ${DIRECTOR_INSTANCE_TYPE:?} --key-name ${AWS_KEYNAME:?} --security-group-ids ${SECURITY_GROUP:?} --subnet-id ${SUBNET_ID:?} --disable-api-termination --output text | grep INSTANCES | cut -f 8)
-aws ec2 create-tags --resources ${INSTANCE_ID:?} --tags Key=owner,Value=${OWNER:?} Key=Name,Value=${INSTANCENAME:?}
+
+until aws ec2 create-tags --resources ${INSTANCE_ID:?} --tags Key=owner,Value=${OWNER:?} Key=Name,Value=${INSTANCENAME:?} 2>/dev/null; do sleep 1; done
+
 message "Created instance named ${INSTANCENAME:?}, id: ${INSTANCE_ID:?} tagged with owner = ${OWNER:?}. 
 	Waiting up to 40 seconds for instance to become available"
 
@@ -208,7 +211,8 @@ scp  -F ${SSH_CONFIG_FILE:?} ${STAGE_DIR:?}/* install_director.sh director:
 # All done - make the zip file from the output directory and put it somewhere for temporary safe keeping
 ## Edit the IdentityFile location to make it local to the ${OUTPUT_DIR:?}
 sed -i '' s@${OUTPUT_DIR:?}/@@ ${SSH_CONFIG_FILE:?}
-ZIPFILE=/tmp/${OWNER:?}.zip
+ZIPFILE=/tmp/${OWNER:?}.$$.zip
+rm -f ${ZIPFILE:?}
 zip -j ${ZIPFILE:?} ${OUTPUT_DIR:?}/*
 
 message "Created zip file ${ZIPFILE:?} containing instructions for ${OWNER:?}"
