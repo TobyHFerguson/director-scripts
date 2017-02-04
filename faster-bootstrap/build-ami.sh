@@ -42,9 +42,9 @@ Usage: $0 [options] <aws-region> <os> [<name>] [<parcel-url>] [<repository-url>]
   [<name>]:      An optional descriptive name for the new AMI.
       Default is calculated dynamically (specified by "AUTO")
   [<parcel-url>]:      Optional parcel URL to use for preloading.
-      Default http://archive.cloudera.com/cdh5/parcels/5.9/
+      Default http://archive.cloudera.com/cdh5/parcels/5.10/
   [<repository-url>]:  Optional Cloudera Manager yum repo to use for preloading.
-      Default http://archive.cloudera.com/cm5/redhat/7/x86_64/cm/5.9/
+      Default http://archive.cloudera.com/cm5/redhat/7/x86_64/cm/5.10/
 
 Be sure to specify <repository-url> for operating systems other than RHEL 7 or
 CentOS 7.
@@ -54,6 +54,8 @@ OPTIONS:
     Show this help message
   -a <ami-info>
     Use a specific base AMI
+  -d
+    Run packer in debug mode
   -j <version>
     Install a specific Java version
         Valid choices: 1.7 (default), 1.8
@@ -125,14 +127,18 @@ get_director_yum_url() {
 }
 
 AMI_OPT=
+DEBUG=
 JAVA_VERSION=1.7
 JDK_REPO=Director
 PRE_EXTRACT=
 PUBLIC_IP=
-while getopts "a:j:J:pPh" opt; do
+while getopts "a:dj:J:pPh" opt; do
   case $opt in
     a)
       AMI_OPT="$OPTARG"
+      ;;
+    d)
+      DEBUG=1
       ;;
     j)
       JAVA_VERSION="$OPTARG"
@@ -174,8 +180,8 @@ fi
 AWS_REGION=$1
 OS=$2
 NAME=${3-AUTO}
-CDH_URL=${4-"http://archive.cloudera.com/cdh5/parcels/5.9/"}
-CM_REPO_URL=${5-"http://archive.cloudera.com/cm5/redhat/7/x86_64/cm/5.9/"}
+CDH_URL=${4-"http://archive.cloudera.com/cdh5/parcels/5.10/"}
+CM_REPO_URL=${5-"http://archive.cloudera.com/cm5/redhat/7/x86_64/cm/5.10/"}
 
 # Validate OS TBD
 
@@ -268,6 +274,12 @@ if [[ -n $PUBLIC_IP ]]; then
   PACKER_VARS_ARRAY+=(-var "associate_public_ip_address=true")
 fi
 
+# Set up other packer options
+PACKER_OPTS=()
+if [[ -n $DEBUG ]]; then
+  PACKER_OPTS+=(-debug)
+fi
+
 JSON=rhel.json
 
-packer build "${PACKER_VARS_ARRAY[@]}" packer-json/"$JSON"
+packer build "${PACKER_VARS_ARRAY[@]}" "${PACKER_OPTS[@]}" packer-json/"$JSON"
