@@ -33,6 +33,10 @@ This will create a zip file containing:
 
 You're expected to email this zip file to the user.
 
+At the end of the lab you'll need to ensure that all the director instances and machines have been terminated. Each user will have a set of machines owned by them, so you can track that via the owner names. Also there are buckets and keys to be deleted - again, user names are used here, so they can be found that way too. 
+
+The director instances have to have their termination protection disabled, but all other instances can be terminated easily.
+
 ### User
 It is assumed that each user has access to `ssh` (Linux/Mac OSX) or, if they have a Windows machine,  that they can configure `putty` or similar given the `ssh_config`
 
