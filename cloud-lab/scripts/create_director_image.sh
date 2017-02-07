@@ -166,11 +166,16 @@ Creating an Analytic Cluster
    ssh -qtF ssh_config director 'cloudera-director bootstrap-remote analytic_cluster.conf --lp.remote.username=admin --lp.remote.password=admin'
 
 Making the output table
-   Create an output table by accessing HUE at http://${DIRECTOR_IP_ADDRESS:?}:8888, and enter the following command to make the output table:
+   Locate the Cloudera Manager URL by executing:
+
+   ssh -qtF ssh_config director ./get_cm_url.sh
+
+   In a browser access Hue via Cloudera Manager and create the etl output table by executing the following sql in the Impala Query Editor: 
+
    CREATE EXTERNAL TABLE etl_table (d_year string,brand_id int,brand string,sum_agg float)  LOCATION 's3a://${BUCKET_NAME:?}/output'
 
 Executing the ETL Job
-   Execute the ETL job to fill the output table by executing the following
+   Execute the ETL job to fill the output table by executing the following:
    
    ssh -qtF ssh_config director './run_all.sh' 
 
