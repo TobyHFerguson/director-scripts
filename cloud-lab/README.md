@@ -37,7 +37,7 @@ You're expected to email this zip file to the user.
 It is assumed that each user has access to `ssh` (Linux/Mac OSX) or, if they have a Windows machine,  that they can configure `putty` or similar given the `ssh_config`
 
 * Linux/Mac OSX - The user is expected to unpack the zip file into some directory, then cd into that directory, cat the README and follow the instru
-#### W
+* Windows - Use the contents of the `ssh_config` file and some internet searching to figure out how to configure your ssh client
 
 
 
