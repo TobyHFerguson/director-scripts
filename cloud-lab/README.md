@@ -17,7 +17,7 @@ These scripts assume that you'll be working in the `us-east-1` region - you'll h
 #### One time:
 Clone this repository with this specific branch: then run the `cloud-lab/scripts/create_director_image.sh` script:
 ```sh
-git clone -b cloud-lab --singlebranch https://github.com/TobyHFerguson/director-scripts
+git clone -b cloud-lab https://github.com/TobyHFerguson/director-scripts
 ```
 
 #### For each user:
