@@ -29,4 +29,5 @@ declare -A BASE_AMIS=(
   ["rhel67"]="ami-0d28fe66 hvm ec2-user /dev/sda1"
   ["rhel71"]="ami-dbc96ab0 hvm ec2-user /dev/sda1"
   ["rhel72"]="ami-85241def hvm ec2-user /dev/sda1"
+  ["rhel73"]="ami-b63769a1 hvm ec2-user /dev/sda1"
 )
