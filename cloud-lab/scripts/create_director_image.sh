@@ -22,13 +22,9 @@ export AWS_DEFAULT_REGION=us-east-1
 
 # CONSTANTS
 
-#CLUSTER_CDH_AMI=ami-49e9fe5e	# AMI for pre-created CDH image
-#CLUSTER_CDH_AMI=ami-05a75613	# AMI for pre-created CDH image - 5.9
 CLUSTER_CDH_AMI=ami-6e6aab78	# CDH 5.10 CentOS 72
 CLUSTER_OS_USER=centos		# User to ssh to CDH image
-#DIRECTOR_OS_AMI=ami-0ca23e1b	# AMI to use for Director - RHEL 73
-#DIRECTOR_OS_AMI=ami-f9bb55ef    # prebuilt ami
-DIRECTOR_OS_AMI=ami-ea6cadfc	 # Director 2.3.0/RHEL 73 AMI
+DIRECTOR_OS_AMI=ami-bb5d9dad	 # Director 2.3.0/RHEL 73 AMI
 DIRECTOR_OS_USER=ec2-user	# User to ssh to Director
 DIRECTOR_INSTANCE_TYPE=c4.xlarge # Director instance type
 INSTANCENAME=${OWNER:?}-director	 # Name for Director instance
