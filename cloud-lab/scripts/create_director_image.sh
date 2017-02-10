@@ -168,6 +168,15 @@ Making the output table
 
    ssh -qtF ssh_config director ./get_cm_url.sh
 
+   To fix bug CDH-5009 perform the following in CM
+   - Edit Hue Service Advanced Configuration Snippt (Safety Value) for hue_safety_valve.ini
+   - copy and paste the below text
+
+   [desktop]
+   allowed_hosts=*
+
+   - save the changes and restart Hue
+
    In a browser access Hue via Cloudera Manager and create the etl output table by executing the following sql in the Impala Query Editor: 
 
    CREATE EXTERNAL TABLE etl_table (d_year string,brand_id int,brand string,sum_agg float)  LOCATION 's3a://${BUCKET_NAME:?}/output'
