@@ -169,7 +169,7 @@ Making the output table
    ssh -qtF ssh_config director ./get_cm_url.sh
 
    To fix bug CDH-5009 perform the following in CM
-   - Edit Hue Service Advanced Configuration Snippt (Safety Value) for hue_safety_valve.ini
+   - Edit Hue Service Advanced Configuration Snippet (Safety Value) for hue_safety_valve.ini
    - copy and paste the below text
 
    [desktop]
