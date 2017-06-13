@@ -1,7 +1,20 @@
 #!/bin/bash
-yum -y install krb5-server expect
+trap exit ERR
+# fixed argument to say whether this is Amazon, Microsoft or Google
+cloud_provider=${1?:'No cloud provider - needs to be on of A - Amazon; M - Microsoft or G - Google'}
+case $cloud_provider in
+     A*) PRIVATE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4);;
+     M*) echo 'Microsoft not supported' 1>&2; exit;;
+     G*) PRIVATE_IP=$(curl http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip -H "Metadata-Flavor: Google");;
+     *) exit;;
+esac
 
-REALM=HADOOPSECURITY.COM
+yum -y install krb5-server rng-tools
+
+systemctl start rngd
+
+REALM=HADOOPSECURITY.LOCAL
+
 
 mv -f /etc/krb5.conf{,.original}
 
@@ -17,10 +30,10 @@ cat - >/etc/krb5.conf <<EOF
  default_tkt_enctypes = aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96 arcfour-hmac-md5
  permitted_enctypes = aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96 arcfour-hmac-md5
 
-'[realms]'
+[realms]
  ${REALM:?} = {
-  kdc = $(hostname -f)
-  admin_server = $(hostname -f)
+  kdc = ${PRIVATE_IP:?}
+  admin_server = ${PRIVATE_IP:?}
  }
 EOF
 
@@ -42,15 +55,21 @@ cat - >/var/kerberos/krb5kdc/kdc.conf <<EOF
  admin_keytab = /var/kerberos/krb5kdc/kadm5.keytab
  supported_enctypes = aes256-cts-hmac-sha1-96:normal aes128-cts-hmac-sha1-96:normal arcfour-hmac-md5:normal
  max_renewable_life = 7d
+}
 EOF
 
 
-sudo kdb5_util create -s
+kdb5_util create -P Passw0rd!
 
 systemctl start krb5kdc
 systemctl enable krb5kdc
 systemctl start kadmin
 systemctl enable kadmin
 
-sudo kadmin.local
-addprinc -pw Passw0rd! cm/admin
+kadmin.local addprinc -pw Passw0rd! cm/admin
+kadmin.local addprinc -pw Cloudera1 cdsw
+
+# Ensure that selinux is turned off now and at reboot
+setenforce 0
+sed -i 's/SELINUX=.*/SELINUX=permissive/' /etc/selinux/config
+
