@@ -37,7 +37,7 @@
 #   with > 255 hosts trying to use the same zone file. It "might just work", or it may require
 #   manually configuring additional zone files in `/etc/named/named.conf.local` and
 #   `/etc/named/zones/`.
-# - It is assumed that the AWS nameserver IP address will always be `168.63.129.16`.
+# - It is assumed that the AWS nameserver IP address will always be `169.254.169.253`
 
 
 #

@@ -1,22 +1,29 @@
 #!/bin/bash
 trap exit ERR
-# fixed argument to say whether this is Amazon, Microsoft or Google
-cloud_provider=${1?:'No cloud provider - needs to be on of A - Amazon; M - Microsoft or G - Google'}
-case $cloud_provider in
-     A*) PRIVATE_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4);;
-     M*) echo 'Microsoft not supported' 1>&2; exit;;
-     G*) PRIVATE_IP=$(curl http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip -H "Metadata-Flavor: Google");;
-     *) exit;;
-esac
-
 yum -y install krb5-server rng-tools
 
-systemctl start rngd
+function svcctl() {
+    if which systemctl 2>/dev/null
+    then
+       systemctl $@
+    else
+	if [ "$1" = "enable" ]
+	then
+	    chkconfig $2 on
+	else
+	    service $2 $1
+	fi
+    fi
+}
+
+grep rdrand /proc/cpuinfo || echo 'EXTRAOPTIONS="-r /dev/urandom"' >> /etc/sysconfig/rngd
+svcctl start rngd
 
 REALM=HADOOPSECURITY.LOCAL
 
+PRIVATE_IP=$(hostname -I)
 
-mv -f /etc/krb5.conf{,.original}
+cp -f /etc/krb5.conf{,.original}
 
 cat - >/etc/krb5.conf <<EOF
 [libdefaults]
@@ -61,13 +68,18 @@ EOF
 
 kdb5_util create -P Passw0rd!
 
-systemctl start krb5kdc
-systemctl enable krb5kdc
-systemctl start kadmin
-systemctl enable kadmin
+svcctl start krb5kdc
+svcctl enable krb5kdc
+svcctl start kadmin
+svcctl enable kadmin
+svcctl stop iptables || :
 
-kadmin.local addprinc -pw Passw0rd! cm/admin
-kadmin.local addprinc -pw Cloudera1 cdsw
+# use this technique instead of kadmin.local addprinc -pw ... because
+# the version of kadmin.local on CentOS6 doesn't allow for passing
+# commands in directly.
+
+echo -e 'addprinc -pw Passw0rd! cm/admin\nexit' | kadmin.local 
+echo -e 'addprinc -pw Cloudera1 cdsw\nexit' | kadmin.local 
 
 # Ensure that selinux is turned off now and at reboot
 setenforce 0

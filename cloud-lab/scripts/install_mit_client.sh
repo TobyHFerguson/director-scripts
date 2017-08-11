@@ -1,12 +1,11 @@
 #!/bin/bash
-
+trap exit ERR 
 if [ $# -ne 1 ]
 then
     cat - <<EOF
 No IP for the KDC provided.
-If you want to use the local instance then pass in the IP like this:
-AWS: install_mit_client.sh $(curl http://169.254.169.254/latest/meta-data/local-ipv4)
-Google: install_mit_client.sh $(curl http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip -H "Metadata-Flavor: Google");;
+If you want to use the local instance IP address then pass in the IP like this:
+install_mit_client.sh \$(hostname -I)
 EOF
     exit 1
 fi
