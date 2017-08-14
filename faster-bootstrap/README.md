@@ -16,7 +16,7 @@ To learn how to use a preloaded AMI, consult the [usage document](ami-usage.md).
 
 ### Prerequisites
 
-Before running the script, [Packer](https://packer.io/) must be installed. Use version 0.8 or newer. Follow the [installation instructions](https://www.packer.io/intro/getting-started/setup.html). Be careful about the other "packer" tool often installed on Red Hat systems.
+Before running the script, [Packer](https://packer.io/) must be installed. Use version 0.8 or newer. Follow the [installation instructions](https://www.packer.io/intro/getting-started/install.html). Be careful about the other "packer" tool often installed on Red Hat systems.
 
 This script and other scripts it sources require bash 4 or higher. Mac OS X and macOS remain on bash 3, so be sure to install and use bash 4, using [Homebrew](http://brew.sh/) for example.
 
@@ -34,10 +34,10 @@ The build-ami.sh script has two required arguments and three optional arguments.
   automatically.
 * (Optional) The CDH parcel URL. This script will download a parcel from this URL to preload and
   possibly pre-extract onto the new AMI. This argument defaults to
-  http://archive.cloudera.com/cdh5/parcels/5.11/.
+  http://archive.cloudera.com/cdh5/parcels/5.12/.
 * (Optional) The Cloudera Manager yum repository URL. This script will download and install
   Cloudera Manager from packages at this URL onto the new AMI. This argument defaults to
-  http://archive.cloudera.com/cm5/redhat/7/x86_64/cm/5.11/.
+  http://archive.cloudera.com/cm5/redhat/7/x86_64/cm/5.12/.
 
 The URLs together determine the version of Cloudera Manager and CDH available on the AMI. Be sure that the version indicated in the parcel URL is not later than the version indicated in the Cloudera Manager URL; that is, Cloudera Manager cannot work with CDH versions newer than itself.
 
