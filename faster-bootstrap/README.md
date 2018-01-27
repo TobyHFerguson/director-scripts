@@ -34,10 +34,10 @@ The build-ami.sh script has two required arguments and three optional arguments.
   automatically.
 * (Optional) The CDH parcel URL. This script will download a parcel from this URL to preload and
   possibly pre-extract onto the new AMI. This argument defaults to
-  http://archive.cloudera.com/cdh5/parcels/5.13/.
+  https://archive.cloudera.com/cdh5/parcels/5.14/.
 * (Optional) The Cloudera Manager yum repository URL. This script will download and install
   Cloudera Manager from packages at this URL onto the new AMI. This argument defaults to
-  http://archive.cloudera.com/cm5/redhat/7/x86_64/cm/5.13/.
+  https://archive.cloudera.com/cm5/redhat/7/x86_64/cm/5.14/.
 
 The URLs together determine the version of Cloudera Manager and CDH available on the AMI. Be sure that the version indicated in the parcel URL is not later than the version indicated in the Cloudera Manager URL; that is, Cloudera Manager cannot work with CDH versions newer than itself.
 
@@ -58,8 +58,8 @@ Running the script in the trivial case is simple: supply the region and OS. The 
 To use a non-default version of Cloudera Manager and CDH, specify their URLs.
 
     $ bash build-ami.sh us-east-1 centos72 "AMI name" \
-    > http://archive.cloudera.com/cdh5/parcels/5.8/ \
-    > http://archive.cloudera.com/cm5/redhat/7/x86_64/cm/5.8/
+    > https://archive.cloudera.com/cdh5/parcels/5.8/ \
+    > https://archive.cloudera.com/cm5/redhat/7/x86_64/cm/5.8/
 
 #### Specifying VPC, subnet, and security group
 
@@ -169,6 +169,14 @@ If parcels are pre-extracted by using the `-p` option, then the DISTRIBUTION pha
 #### Preloading parcels and EBS prewarming
 
 When a block on an Amazon EBS volume is accessed for the first time, significant latency occurs due to the way EBS volumes are implemented. This has an impact on parcel extraction, even with parcel preloading. Director will [prewarm](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-prewarm.html) the parcel in order to speed up file system access to the parcel file. However, the extraction will still take some time as a result.
+
+#### Instance Type of the Build Instance
+
+The instance type used for the build instance is hardcoded in [rhel.json](packer-json/rhel.json) as the value of "instance_type". If you are building inside an EC2 region which lacks that instance type, edit the file to use one that is available. Ensure that the AMI used for the build is available for the updated instance type.
+
+Also, be sure that the AMI used for the build uses a virtualization type (paravirtual or HVM) supported by the instance type in rhel.json. If it does not, you should either use a different AMI, perhaps an equivalent one with a different virtualization type, or change the instance type in rhel.json.
+
+You may use a different instance type for running instances of the resulting preloaded AMI than the one used to build it.
 
 ## Faster Bootstrap for Cloudera Manager (experimental)
 
