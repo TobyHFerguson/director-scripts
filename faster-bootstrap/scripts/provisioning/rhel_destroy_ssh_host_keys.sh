@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
-# (c) Copyright 2016 Cloudera, Inc.
+# (c) Copyright 2018 Cloudera, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# We remove any natively installed JDKs, as both Cloudera Manager and Cloudera Director only support Oracle JDKs
-yum remove --assumeyes *openjdk*
-rpm -ivh "https://archive.cloudera.com/director/redhat/7/x86_64/director/2.7.0/RPMS/x86_64/oracle-j2sdk1.8-1.8.0+update121-1.x86_64.rpm"
+echo "Destroying SSH host keys:"
+sudo ls /etc/ssh/*_key /etc/ssh/*_key.pub
+
+if hash shred 2>/dev/null; then
+  sudo shred -u /etc/ssh/*_key /etc/ssh/*_key.pub
+else
+  sudo rm -f /etc/ssh/*_key /etc/ssh/*_key.pub
+fi
+
+exit 0
