@@ -2,8 +2,12 @@
 #### Install Director
 sudo yum -y update
 sudo yum install -y wget unzip
-wget --no-check-certificate --no-cookies --header 'Cookie: oraclelicense=accept-securebackup-cookie' http://download.oracle.com/otn-pub/java/jdk/8u102-b14/jdk-8u102-linux-x64.rpm
-sudo yum -y localinstall jdk-8u102-linux-x64.rpm
+
+sudo rpm -ivh "http://archive.cloudera.com/director/redhat/7/x86_64/director/2.6.0/RPMS/x86_64/oracle-j2sdk1.8-1.8.0+update121-1.x86_64.rpm"
+echo "export JAVA_HOME="/usr/java/jdk1.8.0_121-cloudera"" >> ~/.bashrc
+echo "export PATH=$PATH:$JAVA_HOME/bin" >> ~/.bashrc
+source ~/.bashrc
+
 cd /etc/yum.repos.d/
 sudo wget "https://archive.cloudera.com/director/redhat/7/x86_64/director/cloudera-director.repo"
 sudo yum install -y cloudera-director-server cloudera-director-client
