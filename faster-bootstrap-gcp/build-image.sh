@@ -43,7 +43,7 @@ Usage: $0 [options] <gcp-zone> <os> <gcp-project-id> [<name>] [<parcel-url>] [<r
   <os>:          The OS family that you want to use as a base.
       Valid choices: centos-6, centos-7, rhel-6, rhel-7
   <gcp-project-id>: The id of the gcp project in which this instance will be built and be subsequently available.
-  [<name>]:      An optional descriptive name for the new AMI.
+  [<name>]:      An optional descriptive name for the new image. alpha-numeric lower case, embedded hyphens OK, 64 characters long. 
       Default is calculated dynamically (specified by "AUTO")
   [<parcel-url>]:      Optional parcel URL to use for preloading.
       Default ${DEFAULT_CDH_URL:?}
@@ -74,15 +74,7 @@ OPTIONS:
 EOF
 }
 
-# Finds the recommended AMI for a region and OS
 source scripts/building/base_images.sh
-
-# Finds the base image for selected OS family
-find_base_image()
-{
-  local os="$1"
-  echo "${BASE_FAMILY[$os]}"
-}
 
 # Parses the parcel for an OS from the list of parcels at the supplied URL.
 get_parcel_url()
@@ -195,8 +187,16 @@ fi
 
 # Compute name if necessary
 if [[ -z $NAME || $NAME == "AUTO" ]]; then
-  NAME="$OS CDH/CM PRELOAD"
+  NAME="${OS-cdh-cm-preload}"
 fi
+[[ "$NAME" =~ ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$ ]] || { 
+    cat <<EOF
+ERROR: $0: Invalid name ($NAME). Must be alphanumeric, lower case, embedded hyphens permitted.
+Must match regexp(7) expression: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
+EOF
+
+    exit 2
+}
 
 # Get the appropriate parcel file
 PARCEL_URL="$(get_parcel_url "$CDH_URL" "$OS")"
@@ -238,6 +238,7 @@ esac
 
 # Set up packer variables
 PACKER_VARS_ARRAY=( $PACKER_VARS )
+PACKER_VARS_ARRAY+=(-var "image_name=${NAME:?}")
 PACKER_VARS_ARRAY+=(-var "project_id=${PROJECT_ID:?}")
 PACKER_VARS_ARRAY+=(-var "zone=${GCP_ZONE:?}" -var "parcel_url=$PARCEL_URL" -var "cm_repository_url=$CM_REPO_URL")
 if [[ -n $CM_GPG_KEY_URL ]]; then
@@ -261,4 +262,15 @@ fi
 
 JSON=gcp.json
 
-packer build "${PACKER_VARS_ARRAY[@]}" "${PACKER_OPTS[@]}" packer-json/"$JSON"
+#packer build "${PACKER_VARS_ARRAY[@]}" "${PACKER_OPTS[@]}" packer-json/"$JSON"
+cat <<EOF
+Use this image uri: $(gcloud compute images list --filter="name ~ ${NAME:?}\$" --uri)
+
+use the following command to find that uri in the future:
+
+ gcloud compute images list --filter="name ~ ${NAME:?}\$" --uri
+
+
+EOF
+
+
