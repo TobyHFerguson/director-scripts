@@ -132,6 +132,12 @@ When observing the bootstrapping process with custom images, the DOWNLOADING pha
 
 If parcels are pre-extracted by using the `-p` option, then the DISTRIBUTION phase should complete very quickly, on the order of 20 to 40 seconds.
 
+#### Machine Type of the Build Instance
+
+The machine type `n1-standard-` used for the build instance is hardcoded in [rhel.json](packer-json/rhel.json) as the value of "machine_type". This machine type was selected for improved build performance considering the network use made of the machine, as guided by the [5 steps to better GCP network performance](https://cloud.google.com/blog/products/gcp/5-steps-to-better-gcp-network-performance?hl=de) blog.
+
+The machine type of the running instance built using the custom image can be anything you choose; its completely independent of the machine type used to build the customer image.
+
 ## Faster Bootstrap for Cloudera Manager 
 
 Versions of Cloudera Manager starting with 5.9.0 include an *experimental* "Faster Bootstrap" capability which became fully released in 5.10. Enabling it can help Cloudera Manager to bootstrap clusters a few minutes faster.
