@@ -37,7 +37,7 @@ https://www.packer.io/docs/builders/googlecompute.html#authentication
 Extra packer options can be provided in the PACKER_VARS environment variable
 prior to executing this script.
 
-Usage: $0 [options] <gcp-zone> <os> <gcp-project-id> [<name>] [<parcel-url>] [<repository-url>]
+Usage: $0 [options] <gcp-zone> <os> <gcp-project-id> [<name>] [<parcel-url>] [<repository-url>] [<repository-key-url>]
 
   <gcp-zone>:  The gcp zone that you want the new image to be housed in.
   <os>:          The OS family that you want to use as a base.
@@ -262,7 +262,7 @@ fi
 
 JSON=gcp.json
 
-#packer build "${PACKER_VARS_ARRAY[@]}" "${PACKER_OPTS[@]}" packer-json/"$JSON"
+packer build "${PACKER_VARS_ARRAY[@]}" "${PACKER_OPTS[@]}" packer-json/"$JSON"
 cat <<EOF
 Use this image uri: $(gcloud compute images list --filter="name ~ ${NAME:?}\$" --uri)
 
