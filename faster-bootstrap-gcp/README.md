@@ -48,7 +48,35 @@ The script also accepts several options. Some of them are described below. Run t
 
 ### Running the script
 
-Before you run the script, your environment must be configured to permit `packer` to obtain valid GCP privileges for the gcp-project in which this custom image will be built and subsequently available. Exactly how `packer` makes this determination is explain in the packer docs under the heading [Precedence of Authentication Methods](https://www.packer.io/docs/builders/googlecompute.html#precedence-of-authentication-methods). This system was tested having setup a gcloud profile, as described in the [gcloud config](https://cloud.google.com/sdk/gcloud/reference/config/) documentation. 
+Before you run the script, your environment must be configured to permit `packer` to obtain valid GCP privileges for the gcp-project in which this custom image will be built and subsequently available. Exactly how `packer` makes this determination is explain in the packer docs under the heading [Precedence of Authentication Methods](https://www.packer.io/docs/builders/googlecompute.html#precedence-of-authentication-methods). This system was tested by creating default application credentials as per [Authentication](https://gcloud-python.readthedocs.io/en/latest/core/auth.html#overview):
+
+```
+gcloud auth application-default login
+Your browser has been opened to visit:
+
+    https://accounts.google.com/o/oauth2/auth?redirect_uri=http%3A%2F%2Flocalhost%3A8085%2F&prompt=select_account&response_type=code&client_id=764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&access_type=offline
+
+
+
+Credentials saved to file: [/Users/toby/.config/gcloud/application_default_credentials.json]
+
+These credentials will be used by any library that requests
+Application Default Credentials.
+
+To generate an access token for other uses, run:
+  gcloud auth application-default print-access-token
+```
+Packer will automatically pick up that file `/Users/toby/.config/gcloud/application_default_credentials.json` (using your own home directory) and should then work.
+
+If you see things like this:
+```
+==> googlecompute: * Get https://www.googleapis.com/compute/v1/projects/gcp-se/global/images/family/centos-7?alt=json: oauth2: cannot fetch token: 400 Bad Request
+==> googlecompute: Response: {
+==> googlecompute:   "error": "invalid_grant",
+==> googlecompute:   "error_description": "Bad Request"
+==> googlecompute: }
+```
+then you've not got your authentication working properly.
 
 
 Running the script in the trivial case is simple: supply the zone,OS family and gcp project id. The script selects a base custom image automatically and installs Cloudera Manager and a CDH parcel using the default URLs.

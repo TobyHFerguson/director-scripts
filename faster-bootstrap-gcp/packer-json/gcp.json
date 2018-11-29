@@ -20,7 +20,6 @@
 	{ 
 	    "type": "googlecompute"
 	    ,"machine_type" : "{{user `machine_type`}}"
-	    ,"account_file": "/Users/toby/.ssh/gcp-se-0141e47dfdf7.json"
 	    ,"project_id": "{{user `project_id`}}"
 	    ,"source_image_family": "{{user `source_image_family`}}"
 	    ,"ssh_username": "google"
